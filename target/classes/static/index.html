@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Category & Product - Spring Boot REST API & AJAX</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <span class="brand-badge"><i class="fas fa-layer-group me-1"></i>HW08</span>
+                <span class="fw-bold tracking-wide">RESTful API & AJAX CRUD</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info rounded-pill px-3" href="/swagger-ui/index.html" target="_blank">
+                            <i class="fas fa-book-open me-1"></i> Swagger 3 UI
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/h2-console" target="_blank">
+                            <i class="fas fa-database me-1"></i> H2 Database
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="loadCategories(); loadProducts(); showToast('info', 'Dữ liệu đã được làm mới!');">
+                            <i class="fas fa-sync-alt me-1"></i> Tải lại
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid px-4 py-4">
+        
+        <!-- Summary Stats Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Danh Mục</div>
+                        <div class="fs-2 fw-bold text-dark mt-1" id="statCategoryCount">0</div>
+                    </div>
+                    <div class="stat-icon icon-blue">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Tổng Sản Phẩm</div>
+                        <div class="fs-2 fw-bold text-dark mt-1" id="statProductCount">0</div>
+                    </div>
+                    <div class="stat-icon icon-purple">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Tổng Tồn Kho</div>
+                        <div class="fs-2 fw-bold text-dark mt-1" id="statTotalStock">0</div>
+                    </div>
+                    <div class="stat-icon icon-green">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Đang Khuyến Mãi</div>
+                        <div class="fs-2 fw-bold text-dark mt-1" id="statDiscountCount">0</div>
+                    </div>
+                    <div class="stat-icon icon-amber">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Controls -->
+        <ul class="nav custom-nav-tabs mb-4" id="managementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="product-tab" data-bs-toggle="tab" data-bs-target="#product-pane" type="button" role="tab">
+                    <i class="fas fa-boxes-stacked"></i> Quản Lý Sản Phẩm (Products)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="category-tab" data-bs-toggle="tab" data-bs-target="#category-pane" type="button" role="tab">
+                    <i class="fas fa-list"></i> Quản Lý Danh Mục (Categories)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs-pane" type="button" role="tab">
+                    <i class="fas fa-code"></i> Thông Tin REST API
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="managementTabsContent">
+            
+            <!-- PRODUCT TAB PANE -->
+            <div class="tab-pane fade show active" id="product-pane" role="tabpanel">
+                <div class="main-card">
+                    <!-- Action Bar -->
+                    <div class="row align-items-center justify-content-between g-3 mb-4">
+                        <div class="col-12 col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0" id="productSearchInput" placeholder="Tìm theo tên sản phẩm, mô tả...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select class="form-select" id="categoryFilterSelect">
+                                <option value="">Tất cả danh mục</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-auto text-end">
+                            <button class="btn btn-primary px-4 fw-semibold rounded-pill" onclick="showCreateProductModal()">
+                                <i class="fas fa-plus me-1"></i> Thêm Sản Phẩm Mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 70px;">ID</th>
+                                    <th style="width: 90px;">Hình Ảnh</th>
+                                    <th>Tên Sản Phẩm</th>
+                                    <th>Danh Mục</th>
+                                    <th>Đơn Giá</th>
+                                    <th>Số Lượng</th>
+                                    <th>Trạng Thái</th>
+                                    <th style="width: 110px;" class="text-center">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTableBody">
+                                <!-- AJAX rendered products -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORY TAB PANE -->
+            <div class="tab-pane fade" id="category-pane" role="tabpanel">
+                <div class="main-card">
+                    <!-- Action Bar -->
+                    <div class="row align-items-center justify-content-between g-3 mb-4">
+                        <div class="col-12 col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0" id="categorySearchInput" placeholder="Tìm kiếm tên danh mục...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto text-end">
+                            <button class="btn btn-success px-4 fw-semibold rounded-pill" onclick="showCreateCategoryModal()">
+                                <i class="fas fa-plus me-1"></i> Thêm Danh Mục Mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Categories Table -->
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 90px;">ID</th>
+                                    <th style="width: 100px;">Icon</th>
+                                    <th>Tên Danh Mục</th>
+                                    <th>Phân Loại</th>
+                                    <th style="width: 120px;" class="text-center">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoryTableBody">
+                                <!-- AJAX rendered categories -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCS TAB PANE -->
+            <div class="tab-pane fade" id="docs-pane" role="tabpanel">
+                <div class="main-card">
+                    <h4 class="fw-bold mb-3"><i class="fas fa-network-wired text-primary me-2"></i>Tài Liệu RESTful API Endpoints</h4>
+                    <p class="text-muted">Các API được xây dựng theo chuẩn Spring Boot 3 và tài liệu hướng dẫn giảng dạy môn Lập trình Web.</p>
+                    
+                    <div class="row g-4 mt-2">
+                        <div class="col-12 col-lg-6">
+                            <div class="card border border-primary h-100">
+                                <div class="card-header bg-primary text-white fw-bold">
+                                    <i class="fas fa-folder me-2"></i>Category RESTful APIs (/api/category)
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-success me-2">GET</span><code>/api/category</code></span>
+                                            <span class="text-muted small">Lấy tất cả danh mục</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-primary me-2">POST</span><code>/api/category/getCategory</code></span>
+                                            <span class="text-muted small">Lấy chi tiết theo ID</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-primary me-2">POST</span><code>/api/category/addCategory</code></span>
+                                            <span class="text-muted small">Thêm mới + Upload Icon</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-warning text-dark me-2">PUT</span><code>/api/category/updateCategory</code></span>
+                                            <span class="text-muted small">Cập nhật + Upload Icon</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-danger me-2">DELETE</span><code>/api/category/deleteCategory</code></span>
+                                            <span class="text-muted small">Xóa danh mục theo ID</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="card border border-info h-100">
+                                <div class="card-header bg-info text-white fw-bold">
+                                    <i class="fas fa-box me-2"></i>Product RESTful APIs (/api/product)
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-success me-2">GET</span><code>/api/product</code></span>
+                                            <span class="text-muted small">Lấy tất cả sản phẩm</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-primary me-2">POST</span><code>/api/product/getProduct</code></span>
+                                            <span class="text-muted small">Lấy chi tiết sản phẩm</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-primary me-2">POST</span><code>/api/product/addProduct</code></span>
+                                            <span class="text-muted small">Thêm mới + Upload ảnh</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-warning text-dark me-2">PUT</span><code>/api/product/updateProduct</code></span>
+                                            <span class="text-muted small">Cập nhật + Upload ảnh</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <span><span class="badge bg-danger me-2">DELETE</span><code>/api/product/deleteProduct</code></span>
+                                            <span class="text-muted small">Xóa sản phẩm theo ID</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- CREATE CATEGORY MODAL -->
+    <div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="addCategoryForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-plus-circle me-2"></i>Thêm Danh Mục Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tên Danh Mục <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="categoryName" id="add_categoryName" placeholder="Nhập tên danh mục..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Icon / Ảnh đại diện</label>
+                            <input type="file" class="form-control" name="icon" id="add_categoryIcon" accept="image/*">
+                            <div class="img-preview-box">
+                                <img id="addCategoryIconPreview" src="https://placehold.co/100x100/e2e8f0/64748b?text=Preview" alt="Preview">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold"><i class="fas fa-save me-1"></i> Lưu danh mục</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT CATEGORY MODAL -->
+    <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="editCategoryForm" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="categoryId" id="edit_categoryId">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-edit me-2"></i>Chỉnh Sửa Danh Mục</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tên Danh Mục <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="categoryName" id="edit_categoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Thay đổi Icon / Ảnh (tùy chọn)</label>
+                            <input type="file" class="form-control" name="icon" id="edit_categoryIcon" accept="image/*">
+                            <div class="img-preview-box">
+                                <img id="editCategoryIconPreview" src="" alt="Preview">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold"><i class="fas fa-save me-1"></i> Cập nhật thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE PRODUCT MODAL -->
+    <div class="modal fade" id="createProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form id="addProductForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-box-open me-2"></i>Thêm Sản Phẩm Mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label">Tên Sản Phẩm <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="productName" placeholder="Ví dụ: iPhone 15 Pro Max" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Danh Mục <span class="text-danger">*</span></label>
+                                <select class="form-select" name="categoryId" id="productCategoryId_add" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Đơn Giá (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="unitPrice" min="0" step="1000" placeholder="0" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Giảm Giá (%)</label>
+                                <input type="number" class="form-control" name="discount" min="0" max="100" step="0.5" value="0">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Số Lượng Tồn</label>
+                                <input type="number" class="form-control" name="quantity" min="0" value="10">
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Trạng Thái</label>
+                                <select class="form-select" name="status">
+                                    <option value="1" selected>Đang bán (Hoạt động)</option>
+                                    <option value="0">Tạm dừng (Vô hiệu hóa)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Ảnh Sản Phẩm</label>
+                                <input type="file" class="form-control" name="imageFile" id="add_productImage" accept="image/*">
+                                <div class="img-preview-box">
+                                    <img id="addProductImagePreview" src="https://placehold.co/100x100/e2e8f0/64748b?text=Preview" alt="Preview">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Mô Tả Sản Phẩm</label>
+                                <textarea class="form-control" name="description" rows="3" placeholder="Nhập mô tả chi tiết sản phẩm..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold"><i class="fas fa-save me-1"></i> Lưu sản phẩm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT PRODUCT MODAL -->
+    <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form id="editProductForm" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="productId" id="edit_productId">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-edit me-2"></i>Chỉnh Sửa Sản Phẩm</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label">Tên Sản Phẩm <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="productName" id="edit_productName" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Danh Mục <span class="text-danger">*</span></label>
+                                <select class="form-select" name="categoryId" id="productCategoryId_edit" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Đơn Giá (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="unitPrice" id="edit_productUnitPrice" min="0" step="1000" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Giảm Giá (%)</label>
+                                <input type="number" class="form-control" name="discount" id="edit_productDiscount" min="0" max="100" step="0.5">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Số Lượng Tồn</label>
+                                <input type="number" class="form-control" name="quantity" id="edit_productQuantity" min="0">
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Trạng Thái</label>
+                                <select class="form-select" name="status" id="edit_productStatus">
+                                    <option value="1">Đang bán (Hoạt động)</option>
+                                    <option value="0">Tạm dừng (Vô hiệu hóa)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Thay đổi Ảnh Sản Phẩm (tùy chọn)</label>
+                                <input type="file" class="form-control" name="imageFile" id="edit_productImage" accept="image/*">
+                                <div class="img-preview-box">
+                                    <img id="editProductImagePreview" src="" alt="Preview">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Mô Tả Sản Phẩm</label>
+                                <textarea class="form-control" name="description" id="edit_productDescription" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold"><i class="fas fa-save me-1"></i> Cập nhật thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="/js/app.js"></script>
+    <script src="/js/category-ajax.js"></script>
+    <script src="/js/product-ajax.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "groups": [
+    {
+      "name": "storage",
+      "type": "vn.iotstar.config.StorageProperties",
+      "sourceType": "vn.iotstar.config.StorageProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "storage.location",
+      "type": "java.lang.String",
+      "sourceType": "vn.iotstar.config.StorageProperties"
+    }
+  ],
+  "hints": []
+}

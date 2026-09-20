@@ -1,0 +1,97 @@
+# GraphQL Schema cho Hệ thống Quản Lý Category & Product
+
+type Category {
+    categoryId: ID!
+    categoryName: String!
+    icon: String
+    products: [Product]
+}
+
+type Product {
+    productId: ID!
+    productName: String!
+    quantity: Int!
+    unitPrice: Float!
+    images: String
+    description: String
+    discount: Float!
+    createDate: String
+    status: Int!
+    category: Category
+}
+
+type PageInfo {
+    totalElements: Int!
+    totalPages: Int!
+    pageNumber: Int!
+    pageSize: Int!
+    isFirst: Boolean!
+    isLast: Boolean!
+    hasNext: Boolean!
+    hasPrevious: Boolean!
+}
+
+type CategoryPage {
+    content: [Category!]!
+    pageInfo: PageInfo!
+}
+
+type ProductPage {
+    content: [Product!]!
+    pageInfo: PageInfo!
+}
+
+input CategoryInput {
+    categoryName: String!
+    icon: String
+}
+
+input ProductInput {
+    productName: String!
+    unitPrice: Float!
+    quantity: Int = 0
+    discount: Float = 0
+    images: String
+    description: String
+    status: Int = 1
+    categoryId: ID!
+}
+
+type Query {
+    # --- CATEGORY QUERIES ---
+    allCategories: [Category!]!
+    categoryById(id: ID!): Category
+    categoriesPage(page: Int = 0, size: Int = 10, name: String): CategoryPage!
+
+    # --- PRODUCT QUERIES ---
+    allProducts: [Product!]!
+    productById(id: ID!): Product
+    
+    # 1. Hiển thị tất cả product có price từ thấp đến cao (hoặc cao đến thấp)
+    productsSortedByPrice(ascending: Boolean = true): [Product!]!
+
+    # 2. Lấy tất cả product của 01 category
+    productsByCategory(categoryId: ID!): [Product!]!
+
+    # 3. Phân trang & tìm kiếm product
+    productsPage(
+        page: Int = 0, 
+        size: Int = 10, 
+        name: String, 
+        categoryId: ID, 
+        sortBy: String = "productId", 
+        sortDir: String = "desc"
+    ): ProductPage!
+}
+
+type Mutation {
+    # --- CATEGORY MUTATIONS ---
+    createCategory(input: CategoryInput!): Category!
+    updateCategory(id: ID!, input: CategoryInput!): Category!
+    deleteCategory(id: ID!): Boolean!
+
+    # --- PRODUCT MUTATIONS ---
+    createProduct(input: ProductInput!): Product!
+    updateProduct(id: ID!, input: ProductInput!): Product!
+    deleteProduct(id: ID!): Boolean!
+}

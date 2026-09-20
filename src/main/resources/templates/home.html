@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Cửa Hàng Trực Tuyến - Spring Boot GraphQL & Thymeleaf</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+                <span class="brand-badge"><i class="fas fa-project-diagram me-1"></i>GraphQL</span>
+                <span class="fw-bold tracking-wide">Product Storefront & AJAX</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold active" href="/">
+                            <i class="fas fa-store me-1"></i> Trang Chủ (Home)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-light rounded-pill px-3 fw-semibold" href="/manage">
+                            <i class="fas fa-tasks me-1"></i> Quản Lý CRUD & Phân Trang
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info rounded-pill px-3" href="/graphiql" target="_blank">
+                            <i class="fas fa-terminal me-1"></i> GraphiQL Playground
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-warning rounded-pill px-3" href="/swagger-ui/index.html" target="_blank">
+                            <i class="fas fa-book-open me-1"></i> Swagger 3
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container-fluid px-4 py-4">
+        
+        <!-- Hero Banner -->
+        <div class="hero-banner mb-4">
+            <div class="row align-items-center">
+                <div class="col-12 col-lg-8">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 mb-2">
+                        <i class="fas fa-bolt me-1"></i> Spring Boot 3 & GraphQL API Client
+                    </span>
+                    <h1 class="display-6 fw-bold mb-2">Hệ Thống Trực Quan Hóa Dữ Liệu Sản Phẩm</h1>
+                    <p class="lead text-white-50 mb-4" style="font-size: 1rem;">
+                        Truy vấn dữ liệu linh hoạt, thời gian thực và chính xác tuyệt đối qua endpoint GraphQL duy nhất <code>/graphql</code> kết hợp Thymeleaf và AJAX jQuery.
+                    </p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="#section-categories" class="btn btn-primary rounded-pill px-4 fw-semibold shadow">
+                            <i class="fas fa-layer-group me-1"></i> Xem Theo Danh Mục
+                        </a>
+                        <a href="#section-sorted-price" class="btn btn-outline-light rounded-pill px-4 fw-semibold">
+                            <i class="fas fa-arrow-down-1-9 me-1"></i> Xem Giá Từ Thấp Đến Cao
+                        </a>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-4 mt-4 mt-lg-0 text-center">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="bg-white bg-opacity-10 rounded-4 p-3 backdrop-blur border border-white border-opacity-10">
+                                <div class="fs-2 fw-bold text-white" th:text="${categoryCount}">0</div>
+                                <div class="text-white-50 small text-uppercase">Danh Mục</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-white bg-opacity-10 rounded-4 p-3 backdrop-blur border border-white border-opacity-10">
+                                <div class="fs-2 fw-bold text-white" th:text="${productCount}">0</div>
+                                <div class="text-white-50 small text-uppercase">Sản Phẩm</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- CHỨC NĂNG 1: LẤY TẤT CẢ PRODUCT CỦA 01 CATEGORY HIỂN THỊ TRÊN HOME -->
+        <!-- =================================================================== -->
+        <div class="section-card mb-5" id="section-categories">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                <div>
+                    <h3 class="section-header-title mb-1" id="selectedCategoryTitle">
+                        <i class="fas fa-folder-open text-primary me-2"></i>Sản Phẩm Theo Danh Mục
+                    </h3>
+                    <p class="text-muted small mb-0">Chọn danh mục để AJAX gửi GraphQL query <code>productsByCategory(categoryId: $id)</code></p>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="loadCategoriesForHome()">
+                        <i class="fas fa-sync-alt me-1"></i> Làm mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category Pills Filter -->
+            <div class="category-pills-wrap mb-4" id="categoryPillsContainer">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <span class="text-muted ms-2">Đang tải danh mục qua GraphQL...</span>
+            </div>
+
+            <!-- Category Products Grid -->
+            <div class="row g-4" id="categoryProductsGrid">
+                <!-- AJAX Rendered Cards -->
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- CHỨC NĂNG 2: HIỂN THỊ TẤT CẢ PRODUCT CÓ PRICE TỪ THẤP ĐẾN CAO      -->
+        <!-- =================================================================== -->
+        <div class="section-card mb-4" id="section-sorted-price">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+                <div>
+                    <h3 class="section-header-title mb-1">
+                        <i class="fas fa-arrow-down-short-wide text-success me-2"></i>Tất Cả Sản Phẩm Sắp Xếp Theo Giá
+                    </h3>
+                    <p class="text-muted small mb-0">Truy vấn toàn bộ sản phẩm và sắp xếp theo đơn giá qua GraphQL query <code>productsSortedByPrice(ascending: Boolean)</code></p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label small fw-semibold text-muted mb-0">Thứ tự giá:</label>
+                    <select class="form-select form-select-sm rounded-pill px-3" id="sortPriceOrderSelect" style="width: auto;">
+                        <option value="asc" selected>Tăng dần (Thấp đến Cao)</option>
+                        <option value="desc">Giảm dần (Cao đến Thấp)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Sorted Price Products Grid -->
+            <div class="row g-4" id="sortedPriceProductsGrid">
+                <!-- AJAX Rendered Cards -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Quick View Modal -->
+    <div class="modal fade" id="quickViewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-primary"><i class="fas fa-info-circle me-2"></i>Chi Tiết Sản Phẩm (GraphQL)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-12 col-md-5 text-center">
+                            <img id="qv_image" src="" class="img-fluid rounded-3 shadow-sm border" alt="Product" style="max-height: 280px; object-fit: contain;">
+                        </div>
+                        <div class="col-12 col-md-7">
+                            <span class="badge bg-primary-subtle text-primary mb-2" id="qv_categoryName">Category</span>
+                            <h4 class="fw-bold text-dark mb-2" id="qv_productName">Product Name</h4>
+                            
+                            <div class="mb-3 d-flex align-items-baseline gap-2">
+                                <span class="fs-3 fw-bold text-primary" id="qv_unitPrice">0 đ</span>
+                                <span class="text-muted text-decoration-line-through small" id="qv_originalPrice">0 đ</span>
+                                <span class="badge bg-danger-subtle text-danger" id="qv_discountBadge">-0%</span>
+                            </div>
+
+                            <p class="text-muted small mb-3" id="qv_description">Mô tả sản phẩm...</p>
+                            
+                            <div class="border-top pt-3">
+                                <div class="row g-2 small">
+                                    <div class="col-6">
+                                        <span class="text-muted">Tồn kho:</span> <strong id="qv_quantity">0</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted">Giao thức:</span> <strong>GraphQL POST /graphql</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- GraphQL AJAX Logic -->
+    <script src="/js/graphql-client.js"></script>
+    <script src="/js/home-graphql.js"></script>
+</body>
+</html>

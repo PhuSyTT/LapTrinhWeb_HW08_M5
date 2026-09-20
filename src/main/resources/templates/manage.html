@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Quản Lý Hệ Thống - GraphQL AJAX CRUD</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/manage">
+                <span class="brand-badge"><i class="fas fa-layer-group me-1"></i>HW08</span>
+                <span class="fw-bold tracking-wide">GraphQL CRUD & Pagination Dashboard</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-light rounded-pill px-3 fw-semibold" href="/">
+                            <i class="fas fa-store me-1"></i> Trang Chủ (Home)
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold active" href="/manage">
+                            <i class="fas fa-tasks me-1"></i> Quản Lý CRUD
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-sm btn-outline-info rounded-pill px-3 fw-semibold" href="/graphiql" target="_blank">
+                            <i class="fas fa-terminal me-1"></i> GraphiQL Playground
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="fetchAndRenderProducts(); fetchAndRenderCategories(); showToast('info', 'Dữ liệu đã được cập nhật qua GraphQL!');">
+                            <i class="fas fa-sync-alt me-1"></i> Tải lại
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-fluid px-4 py-4">
+        
+        <!-- Summary Stats Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Danh Mục (Categories)</div>
+                        <div class="fs-2 fw-bold text-dark mt-1" id="statCategoryCount" th:text="${categoryCount}">0</div>
+                    </div>
+                    <div class="stat-icon icon-blue">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Tổng Sản Phẩm (Products)</div>
+                        <div class="fs-2 fw-bold text-dark mt-1" id="statProductCount" th:text="${productCount}">0</div>
+                    </div>
+                    <div class="stat-icon icon-purple">
+                        <i class="fas fa-box"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Giao Thức Thực Thi</div>
+                        <div class="fs-5 fw-bold text-success mt-2">GraphQL Engine</div>
+                    </div>
+                    <div class="stat-icon icon-green">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="stat-card d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Giao Diện Khám Phá</div>
+                        <div class="fs-5 fw-bold text-primary mt-2">GraphiQL Interactive</div>
+                    </div>
+                    <div class="stat-icon icon-amber">
+                        <i class="fas fa-code"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Management Navigation Tabs -->
+        <ul class="nav custom-nav-tabs mb-4" id="managementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="product-tab" data-bs-toggle="tab" data-bs-target="#product-pane" type="button" role="tab">
+                    <i class="fas fa-boxes-stacked"></i> Quản Lý Sản Phẩm (CRUD & Phân Trang GraphQL)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="category-tab" data-bs-toggle="tab" data-bs-target="#category-pane" type="button" role="tab">
+                    <i class="fas fa-list"></i> Quản Lý Danh Mục (CRUD & Phân Trang GraphQL)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs-pane" type="button" role="tab">
+                    <i class="fas fa-file-code"></i> Tài Liệu Câu Lệnh GraphQL
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="managementTabsContent">
+            
+            <!-- ========================================== -->
+            <!-- TAB 1: QUẢN LÝ SẢN PHẨM (GRAPHQL AJAX)     -->
+            <!-- ========================================== -->
+            <div class="tab-pane fade show active" id="product-pane" role="tabpanel">
+                <div class="main-card">
+                    <!-- Action Bar -->
+                    <div class="row align-items-center justify-content-between g-3 mb-4">
+                        <div class="col-12 col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0" id="productSearchInput" placeholder="Tìm kiếm tên sản phẩm qua GraphQL...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <select class="form-select" id="categoryFilterSelect">
+                                <option value="">Tất cả danh mục</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-auto text-end">
+                            <button class="btn btn-primary px-4 fw-semibold rounded-pill" onclick="openCreateProductModal()">
+                                <i class="fas fa-plus me-1"></i> Thêm Sản Phẩm Mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Products Table -->
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 70px;">ID</th>
+                                    <th style="width: 90px;">Hình Ảnh</th>
+                                    <th>Tên Sản Phẩm</th>
+                                    <th>Danh Mục</th>
+                                    <th>Đơn Giá</th>
+                                    <th>Số Lượng</th>
+                                    <th>Trạng Thái</th>
+                                    <th style="width: 110px;" class="text-center">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTableBody">
+                                <!-- AJAX rendered products via GraphQL -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top" id="productPaginationContainer">
+                        <div class="text-muted small">Phân trang dữ liệu trực tiếp bằng GraphQL Query <code>productsPage</code></div>
+                        <div id="productPagination"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 2: QUẢN LÝ DANH MỤC (GRAPHQL AJAX)     -->
+            <!-- ========================================== -->
+            <div class="tab-pane fade" id="category-pane" role="tabpanel">
+                <div class="main-card">
+                    <!-- Action Bar -->
+                    <div class="row align-items-center justify-content-between g-3 mb-4">
+                        <div class="col-12 col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0" id="categorySearchInput" placeholder="Tìm kiếm tên danh mục qua GraphQL...">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-auto text-end">
+                            <button class="btn btn-success px-4 fw-semibold rounded-pill" onclick="openCreateCategoryModal()">
+                                <i class="fas fa-plus me-1"></i> Thêm Danh Mục Mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Categories Table -->
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 90px;">ID</th>
+                                    <th style="width: 100px;">Icon</th>
+                                    <th>Tên Danh Mục</th>
+                                    <th>Phân Loại</th>
+                                    <th style="width: 120px;" class="text-center">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoryTableBody">
+                                <!-- AJAX rendered categories via GraphQL -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex align-items-center justify-content-between mt-3 pt-3 border-top" id="categoryPaginationContainer">
+                        <div class="text-muted small">Phân trang dữ liệu trực tiếp bằng GraphQL Query <code>categoriesPage</code></div>
+                        <div id="categoryPagination"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 3: TÀI LIỆU CÂU LỆNH GRAPHQL           -->
+            <!-- ========================================== -->
+            <div class="tab-pane fade" id="docs-pane" role="tabpanel">
+                <div class="main-card">
+                    <h4 class="fw-bold mb-3"><i class="fas fa-project-diagram text-primary me-2"></i>Hướng Dẫn Truy Vấn GraphQL API Endpoints</h4>
+                    <p class="text-muted">Tất cả các truy vấn và mutation đều được gửi tới endpoint duy nhất: <code>POST /graphql</code> với header <code>Content-Type: application/json</code>.</p>
+                    
+                    <div class="row g-4 mt-1">
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm h-100 bg-light">
+                                <div class="card-header bg-dark text-white fw-bold">
+                                    <i class="fas fa-search me-2"></i>1. Query Sản Phẩm Theo Giá Tăng Dần
+                                </div>
+                                <div class="card-body">
+                                    <pre class="bg-white p-3 rounded border text-primary small mb-0"><code>query {
+  productsSortedByPrice(ascending: true) {
+    productId
+    productName
+    unitPrice
+    discount
+    category {
+      categoryName
+    }
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm h-100 bg-light">
+                                <div class="card-header bg-dark text-white fw-bold">
+                                    <i class="fas fa-folder me-2"></i>2. Query Sản Phẩm Theo 1 Category
+                                </div>
+                                <div class="card-body">
+                                    <pre class="bg-white p-3 rounded border text-primary small mb-0"><code>query {
+  productsByCategory(categoryId: 1) {
+    productId
+    productName
+    unitPrice
+    quantity
+    images
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm h-100 bg-light">
+                                <div class="card-header bg-dark text-white fw-bold">
+                                    <i class="fas fa-file-invoice me-2"></i>3. Phân Trang & Tìm Kiếm Product
+                                </div>
+                                <div class="card-body">
+                                    <pre class="bg-white p-3 rounded border text-primary small mb-0"><code>query {
+  productsPage(page: 0, size: 5, name: "iPhone") {
+    content {
+      productId
+      productName
+      unitPrice
+    }
+    pageInfo {
+      totalElements
+      totalPages
+      pageNumber
+    }
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm h-100 bg-light">
+                                <div class="card-header bg-dark text-white fw-bold">
+                                    <i class="fas fa-plus-circle me-2"></i>4. Mutation Thêm Sản Phẩm Mới
+                                </div>
+                                <div class="card-body">
+                                    <pre class="bg-white p-3 rounded border text-primary small mb-0"><code>mutation {
+  createProduct(input: {
+    productName: "Laptop Dell XPS 15"
+    unitPrice: 45000000.0
+    quantity: 15
+    discount: 5.0
+    categoryId: 2
+  }) {
+    productId
+    productName
+  }
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- CREATE PRODUCT MODAL -->
+    <div class="modal fade" id="createProductGqlModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form id="addProductGqlForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-box-open me-2"></i>Thêm Sản Phẩm Mới (GraphQL Mutation)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label">Tên Sản Phẩm <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_gql_productName" placeholder="Ví dụ: iPhone 15 Pro Max" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Danh Mục <span class="text-danger">*</span></label>
+                                <select class="form-select" id="add_gql_categoryId" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Đơn Giá (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="add_gql_unitPrice" min="0" step="1000" placeholder="0" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Giảm Giá (%)</label>
+                                <input type="number" class="form-control" id="add_gql_discount" min="0" max="100" step="0.5" value="0">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Số Lượng Tồn</label>
+                                <input type="number" class="form-control" id="add_gql_quantity" min="0" value="10">
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Trạng Thái</label>
+                                <select class="form-select" id="add_gql_status">
+                                    <option value="1" selected>Đang bán (Hoạt động)</option>
+                                    <option value="0">Tạm dừng (Vô hiệu hóa)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Ảnh Sản Phẩm</label>
+                                <input type="file" class="form-control" id="add_gql_productImageFile" accept="image/*">
+                                <div class="img-preview-box">
+                                    <img id="addProductGqlImagePreview" src="https://placehold.co/100x100/e2e8f0/64748b?text=Preview" alt="Preview">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Mô Tả Sản Phẩm</label>
+                                <textarea class="form-control" id="add_gql_description" rows="3" placeholder="Nhập mô tả chi tiết sản phẩm..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold"><i class="fas fa-save me-1"></i> Lưu sản phẩm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT PRODUCT MODAL -->
+    <div class="modal fade" id="editProductGqlModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form id="editProductGqlForm">
+                    <input type="hidden" id="edit_gql_productId">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-primary"><i class="fas fa-edit me-2"></i>Chỉnh Sửa Sản Phẩm (GraphQL Mutation)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label">Tên Sản Phẩm <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="edit_gql_productName" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Danh Mục <span class="text-danger">*</span></label>
+                                <select class="form-select" id="edit_gql_categoryId" required>
+                                    <option value="">-- Chọn danh mục --</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Đơn Giá (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="edit_gql_unitPrice" min="0" step="1000" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Giảm Giá (%)</label>
+                                <input type="number" class="form-control" id="edit_gql_discount" min="0" max="100" step="0.5">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Số Lượng Tồn</label>
+                                <input type="number" class="form-control" id="edit_gql_quantity" min="0">
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Trạng Thái</label>
+                                <select class="form-select" id="edit_gql_status">
+                                    <option value="1">Đang bán (Hoạt động)</option>
+                                    <option value="0">Tạm dừng (Vô hiệu hóa)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Thay đổi Ảnh Sản Phẩm (tùy chọn)</label>
+                                <input type="file" class="form-control" id="edit_gql_productImageFile" accept="image/*">
+                                <div class="img-preview-box">
+                                    <img id="editProductGqlImagePreview" src="" alt="Preview">
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Mô Tả Sản Phẩm</label>
+                                <textarea class="form-control" id="edit_gql_description" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold"><i class="fas fa-save me-1"></i> Cập nhật thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE CATEGORY MODAL -->
+    <div class="modal fade" id="createCategoryGqlModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="addCategoryGqlForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-success"><i class="fas fa-plus-circle me-2"></i>Thêm Danh Mục Mới (GraphQL)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tên Danh Mục <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="add_gql_categoryName" placeholder="Nhập tên danh mục..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Icon / Ảnh đại diện</label>
+                            <input type="file" class="form-control" id="add_gql_categoryIconFile" accept="image/*">
+                            <div class="img-preview-box">
+                                <img id="addCategoryGqlIconPreview" src="https://placehold.co/100x100/e2e8f0/64748b?text=Preview" alt="Preview">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold"><i class="fas fa-save me-1"></i> Lưu danh mục</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT CATEGORY MODAL -->
+    <div class="modal fade" id="editCategoryGqlModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="editCategoryGqlForm">
+                    <input type="hidden" id="edit_gql_categoryId">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-success"><i class="fas fa-edit me-2"></i>Chỉnh Sửa Danh Mục (GraphQL)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tên Danh Mục <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_gql_categoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Thay đổi Icon / Ảnh (tùy chọn)</label>
+                            <input type="file" class="form-control" id="edit_gql_categoryIconFile" accept="image/*">
+                            <div class="img-preview-box">
+                                <img id="editCategoryGqlIconPreview" src="" alt="Preview">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold"><i class="fas fa-save me-1"></i> Cập nhật thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- GraphQL AJAX Logic -->
+    <script src="/js/graphql-client.js"></script>
+    <script src="/js/manage-graphql.js"></script>
+</body>
+</html>
